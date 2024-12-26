@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON 格式化工具</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --hover-color: #1976D2;
+            --background-color: #f8f9fa;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            max-width: 88%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: #333;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .editor-container {
+            display: grid;
+            grid-template-columns: 40% 60%;
+            gap: 20px;
+            align-items: start;
+            justify-content: center;
+        }
+        
+        .editor-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        @media (max-width: 1280px) {
+            .editor-container {
+                grid-template-columns: 40% 60%;
+            }
+        }
+        
+        .editor-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        textarea, #output {
+            width: 100%;
+            min-height: 500px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            box-sizing: border-box;
+        }
+        
+        textarea {
+            height: 500px;
+            max-height: 800px;
+            resize: vertical;
+        }
+        
+        #output {
+            white-space: pre-wrap;
+            background-color: #fafafa;
+            position: relative;
+            height: auto;
+            overflow-y: visible;
+            overflow-x: hidden;
+            word-wrap: break-word;
+            word-break: break-all;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+        }
+        
+        #output pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-all;
+            color: #444;
+        }
+        
+        .button-group {
+            display: none;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        button:hover {
+            background-color: var(--hover-color);
+            transform: translateY(-1px);
+        }
+        
+        .error {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+            text-align: center;
+        }
+        
+        .copy-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255,255,255,0.9);
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .copy-button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .separator {
+            height: 2px;
+            background-color: var(--border-color);
+            margin: 20px 0;
+        }
+        
+        .input-container {
+            position: relative;
+            width: 100%;
+        }
+        
+        .compress-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255,255,255,0.9);
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .compress-button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .copy-input-button {
+            position: absolute;
+            top: 10px;
+            right: 70px;
+            background-color: rgba(255,255,255,0.9);
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .copy-input-button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .output-container {
+            position: relative;
+            width: 100%;
+        }
+        
+        .format-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1;
+            background-color: rgba(255,255,255,0.9);
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .format-button:hover,
+        .clear-button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .clear-button {
+            position: absolute;
+            top: 10px;
+            right: 130px;
+            background-color: rgba(255,255,255,0.9);
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .json-key {
+            color: #881391;
+            font-weight: 500;
+        }
+        
+        .json-string {
+            color: #268bd2;
+        }
+        
+        .json-number {
+            color: #b58900;
+        }
+        
+        .json-boolean {
+            color: #859900;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JSON 格式化工具</h1>
+        <div class="editor-container">
+            <div class="editor-section">
+                <div class="editor-label">输入 JSON</div>
+                <div class="input-container">
+                    <textarea id="input" placeholder="请输入需要格式化的 JSON 文本..."></textarea>
+                    <button class="clear-button" onclick="clearAll()">清空</button>
+                    <button class="compress-button" onclick="compressJSON()">压缩</button>
+                    <button class="copy-input-button" onclick="copyInput()">复制</button>
+                </div>
+            </div>
+            <div class="editor-section">
+                <div class="editor-label">格式化结果</div>
+                <div class="output-container">
+                    <button class="format-button" onclick="formatJSON()">格式化</button>
+                    <div id="output">
+                        <button class="copy-button" onclick="copyOutput()">复制</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="error" id="error">无效的 JSON 格式</div>
+    </div>
+
+    <script>
+        /**
+         * 格式化JSON文本
+         * 支持单个JSON对象和多行JSON
+         */
+        function formatJSON() {
+            const input = document.getElementById('input').value;
+            const output = document.getElementById('output');
+            const error = document.getElementById('error');
+            
+            // 重置输出区域和错误提示
+            output.innerHTML = '<button class="copy-button" onclick="copyOutput()">复制</button>';
+            error.style.display = 'none';
+            
+            // 检查输入是否为空
+            if (!input.trim()) {
+                error.textContent = '请输入 JSON 文本';
+                error.style.display = 'block';
+                return;
+            }
+
+            // 尝试解析整个输入作为单个JSON
+            try {
+                const obj = JSON.parse(input.trim());
+                const processedObj = recursivelyParseJSON(obj);
+                const formatted = JSON.stringify(processedObj, null, 2);
+                // 添加语法高亮
+                const highlighted = formatted.replace(
+                    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+                    function (match) {
+                        let cls = 'json-number';
+                        if (/^"/.test(match)) {
+                            if (/:$/.test(match)) {
+                                cls = 'json-key';
+                            } else {
+                                cls = 'json-string';
+                            }
+                        } else if (/true|false/.test(match)) {
+                            cls = 'json-boolean';
+                        }
+                        return '<span class="' + cls + '">' + match + '</span>';
+                    }
+                );
+                output.innerHTML += `<pre>${highlighted}</pre>`;
+                return;
+            } catch (e) {
+                // 如果整体解析失败，尝试逐行解析
+                const lines = input.split('\n').filter(line => line.trim());
+                let hasValidJSON = false;
+
+                // 处理每一行
+                lines.forEach((line, index) => {
+                    try {
+                        const obj = JSON.parse(line.trim());
+                        const processedObj = recursivelyParseJSON(obj);
+                        const formatted = JSON.stringify(processedObj, null, 2);
+                        
+                        // 添加分隔线
+                        if (hasValidJSON) {
+                            output.innerHTML += '<div class="separator"></div>';
+                        }
+                        
+                        output.innerHTML += `<pre>${formatted}</pre>`;
+                        hasValidJSON = true;
+                    } catch (e) {
+                        // 处理无效的JSON行
+                        if (line.trim()) {
+                            if (hasValidJSON) {
+                                output.innerHTML += '<div class="separator"></div>';
+                            }
+                            error.style.display = 'block';
+                            if (!error.textContent.includes('部分行解析失败')) {
+                                error.textContent = '部分行解析失败';
+                            }
+                            output.innerHTML += `<pre style="color: #d32f2f;">第 ${index + 1} 行: 无效的 JSON 格式</pre>`;
+                            hasValidJSON = true;
+                        }
+                    }
+                });
+
+                // 如果所有行都解析失败
+                if (!hasValidJSON) {
+                    error.textContent = '无效的 JSON 格式';
+                    error.style.display = 'block';
+                }
+            }
+        }
+
+        /**
+         * 递归解析JSON字符串
+         * @param {any} obj - 要解析的对象或值
+         * @returns {any} - 解析后的结果
+         */
+        function recursivelyParseJSON(obj) {
+            // 处理字符串类型：尝试解析为JSON
+            if (typeof obj === 'string') {
+                try {
+                    const parsed = JSON.parse(obj);
+                    return recursivelyParseJSON(parsed);
+                } catch (e) {
+                    return obj;
+                }
+            }
+            
+            // 处理对象类型
+            if (typeof obj === 'object' && obj !== null) {
+                // 处理数组：递归处理每个元素
+                if (Array.isArray(obj)) {
+                    return obj.map(item => recursivelyParseJSON(item));
+                }
+                
+                // 处理普通对象：递归处理每个属性值
+                const result = {};
+                for (const key in obj) {
+                    result[key] = recursivelyParseJSON(obj[key]);
+                    if (key === 'config') {
+                        console.info('config', obj[key], result[key]);
+                    }
+                }
+                return result;
+            }
+            
+            // 其他类型直接返回
+            return obj;
+        }
+
+        /**
+         * 清空输入和输出区域
+         */
+        function clearAll() {
+            document.getElementById('input').value = '';
+            document.getElementById('output').innerHTML = '<button class="copy-button" onclick="copyOutput()">复制</button>';
+            document.getElementById('error').style.display = 'none';
+        }
+
+        /**
+         * 复制输出区域的内容到剪贴板
+         */
+        function copyOutput() {
+            const output = document.getElementById('output');
+            const text = output.innerText.replace('复制', '').trim();
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const copyBtn = output.querySelector('.copy-button');
+                copyBtn.textContent = '已复制';
+                setTimeout(() => {
+                    copyBtn.textContent = '复制';
+                }, 2000);
+            }).catch(err => {
+                console.error('复制失败:', err);
+            });
+        }
+
+        /**
+         * 压缩JSON文本
+         * 支持单个JSON对象和多行JSON
+         */
+        function compressJSON() {
+            const input = document.getElementById('input').value;
+            const error = document.getElementById('error');
+            
+            error.style.display = 'none';
+            
+            if (!input.trim()) {
+                error.textContent = '请输入 JSON 文本';
+                error.style.display = 'block';
+                return;
+            }
+
+            try {
+                // 尝试压缩整个输入
+                const obj = JSON.parse(input.trim());
+                const compressed = JSON.stringify(obj);
+                document.getElementById('input').value = compressed;
+            } catch (e) {
+                // 如果整体压缩失败，尝试逐行压缩
+                const lines = input.split('\n').filter(line => line.trim());
+                const compressedLines = lines.map(line => {
+                    try {
+                        const obj = JSON.parse(line.trim());
+                        return JSON.stringify(obj);
+                    } catch (e) {
+                        return line;
+                    }
+                });
+                
+                // 检查是否有任何行被成功压缩
+                if (compressedLines.every(line => lines.includes(line))) {
+                    error.textContent = '无效的 JSON 格式';
+                    error.style.display = 'block';
+                    return;
+                }
+                
+                document.getElementById('input').value = compressedLines.join('\n');
+            }
+        }
+
+        /**
+         * 复制输入框的内容到剪贴板
+         */
+        function copyInput() {
+            const input = document.getElementById('input');
+            const text = input.value;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const copyBtn = document.querySelector('.copy-input-button');
+                copyBtn.textContent = '已复制';
+                setTimeout(() => {
+                    copyBtn.textContent = '复制';
+                }, 2000);
+            }).catch(err => {
+                console.error('复制失败:', err);
+            });
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 添加输入框失焦自动格式化功能
+            const input = document.getElementById('input');
+            input.addEventListener('blur', function() {
+                if (this.value.trim()) {  // 只在输入框有内容时自动格式化
+                    formatJSON();
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

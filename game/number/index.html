@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>趣味找数字</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #f0f9ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .game-container {
+            background-color: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }
+
+        .target-number {
+            font-size: 24px;
+            color: #4d4d4d;
+            margin: 20px 0;
+        }
+
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .number-box {
+            background-color: #4ecdc4;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: transform 0.2s;
+        }
+
+        .number-box:hover {
+            transform: scale(1.1);
+        }
+
+        .timer {
+            font-size: 24px;
+            color: #ff6b6b;
+            margin: 20px 0;
+        }
+
+        .score {
+            font-size: 20px;
+            color: #4d4d4d;
+        }
+
+        button {
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+
+        button:hover {
+            background-color: #ff5252;
+        }
+
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>趣味找数字</h1>
+        <div class="target-number">找一找：<span id="target">5</span></div>
+        <div class="timer">时间：<span id="time">30</span> 秒</div>
+        <div class="score">得分：<span id="score">0</span></div>
+        <div class="numbers-grid" id="grid"></div>
+        <button onclick="startGame()">开始游戏</button>
+    </div>
+    <div class="celebration" id="celebration"></div>
+
+    <script>
+        let score = 0;
+        let timer;
+        let timeLeft = 30;
+        let targetNumber;
+        let isPlaying = false;
+
+        function startGame() {
+            if (isPlaying) return;
+            isPlaying = true;
+            score = 0;
+            timeLeft = 30;
+            updateScore();
+            startTimer();
+            generateNumbers();
+        }
+
+        function generateNumbers() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            const numbers = [];
+            
+            // 生成20个不同的随机数
+            while (numbers.length < 20) {
+                const num = Math.floor(Math.random() * 50) + 1;
+                if (!numbers.includes(num)) {
+                    numbers.push(num);
+                }
+            }
+
+            // 设置目标数字
+            targetNumber = numbers[Math.floor(Math.random() * numbers.length)];
+            document.getElementById('target').textContent = targetNumber;
+
+            // 创建数字格子
+            numbers.forEach(num => {
+                const box = document.createElement('div');
+                box.className = 'number-box';
+                box.textContent = num;
+                box.onclick = () => checkNumber(num);
+                grid.appendChild(box);
+            });
+        }
+
+        function checkNumber(num) {
+            if (!isPlaying) return;
+            
+            if (num === targetNumber) {
+                score += 10;
+                updateScore();
+                showCelebration();
+                generateNumbers();
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('time').textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            isPlaying = false;
+            clearInterval(timer);
+            alert(`游戏结束！你的得分是：${score}`);
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+
+        function showCelebration() {
+            const celebration = document.getElementById('celebration');
+            celebration.style.display = 'block';
+            celebration.innerHTML = '🎉';
+            
+            setTimeout(() => {
+                celebration.style.display = 'none';
+            }, 1000);
+        }
+
+        // 初始化游戏
+        generateNumbers();
+    </script>
+</body>
+</html>

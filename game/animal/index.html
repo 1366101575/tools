@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>找动物游戏</title>
+    <style>
+        body {
+            font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f9ff;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .animal-btn {
+            width: 120px;
+            height: 120px;
+            padding: 0;
+            overflow: hidden;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .animal-btn img {
+            border-radius: 15px;
+            transition: transform 0.2s;
+        }
+
+        .animal-btn:hover img {
+            transform: scale(1.1);
+        }
+
+        /* 复用其他样式... */
+        [其他样式与找数字游戏相同]
+
+        .history-img {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            object-fit: cover;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen" class="screen start-screen active">
+        <div class="container">
+            <h1 class="game-title">找动物游戏</h1>
+            <p class="game-description">
+                听动物叫声，找到对应的动物！每局游戏10轮，答对得1分。
+                看看你能得多少分！
+            </p>
+            <button id="start-button" class="big-button">开始游戏</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen result-screen">
+        <!-- 结果界面与找数字游戏相同 -->
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="container">
+            <div id="score">得分：<span id="score-value">0</span></div>
+            <div id="question">
+                找一找：
+                <button id="play-button" class="play-btn">
+                    <span class="play-icon">🔊</span> 播放声音
+                </button>
+            </div>
+            <div class="game-layout">
+                <div id="game-container"></div>
+                <div class="game-history">
+                    <div class="history-title">游戏记录</div>
+                    <div class="progress-info">第 <span id="current-round">1</span>/10 轮</div>
+                    <div id="history-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="celebration"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+    <script>
+        const animals = [
+            { img: "/images/animals/dog.jpg", name: "狗", sound: "汪汪" },
+            { img: "/images/animals/cat.jpg", name: "猫", sound: "喵喵" },
+            { img: "/images/animals/cow.jpg", name: "牛", sound: "哞哞" },
+            { img: "/images/animals/pig.jpg", name: "猪", sound: "哼哼" },
+            { img: "/images/animals/chicken.jpg", name: "鸡", sound: "咯咯" },
+            { img: "/images/animals/horse.jpg", name: "马", sound: "嘶嘶" },
+            { img: "/images/animals/sheep.jpg", name: "羊", sound: "咩咩" },
+            { img: "/images/animals/lion.jpg", name: "狮子", sound: "吼吼" },
+            { img: "/images/animals/elephant.jpg", name: "大象", sound: "哞哞" }
+        ];
+
+        let score = 0;
+        let targetAnimal;
+        let currentRound = 1;
+        const TOTAL_ROUNDS = 10;
+
+        function playAnimalSound(animal) {
+            const utterance = new SpeechSynthesisUtterance(animal.sound);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 1.0;
+            utterance.pitch = 1.2;
+            speechSynthesis.speak(utterance);
+        }
+
+        function generateAnimals() {
+            return [...animals].sort(() => Math.random() - 0.5);
+        }
+
+        function setNewTarget() {
+            const shuffledAnimals = generateAnimals();
+            targetAnimal = shuffledAnimals[Math.floor(Math.random() * shuffledAnimals.length)];
+            
+            playAnimalSound(targetAnimal);
+            
+            const gameContainer = document.getElementById('game-container');
+            gameContainer.innerHTML = '';
+            
+            shuffledAnimals.forEach(animal => {
+                const button = document.createElement('button');
+                button.className = 'animal-btn';
+                const img = document.createElement('img');
+                img.src = animal.img;
+                img.alt = animal.name;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                button.appendChild(img);
+                button.onclick = () => checkAnimal(animal, button);
+                gameContainer.appendChild(button);
+            });
+        }
+
+        function addHistoryItem(animal, isSuccess) {
+            const historyContainer = document.getElementById('history-container');
+            const historyItem = document.createElement('div');
+            historyItem.className = `history-item ${isSuccess ? 'success' : 'fail'}`;
+            historyItem.innerHTML = `
+                <span class="round-number">第${currentRound}轮:</span>
+                <span>${isSuccess ? '✓' : '✗'}</span>
+                <img src="${animal.img}" alt="${animal.name}" class="history-img">
+                <span>${animal.name}</span>
+            `;
+            historyContainer.appendChild(historyItem);
+
+            const resultHistoryItem = historyItem.cloneNode(true);
+            document.getElementById('result-history-container').appendChild(resultHistoryItem);
+        }
+
+        function checkAnimal(animal, button) {
+            const isCorrect = animal === targetAnimal;
+            
+            if (isCorrect) {
+                button.classList.add('correct');
+                score += 1;
+                document.getElementById('score-value').textContent = score;
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            } else {
+                button.classList.add('wrong');
+            }
+
+            addHistoryItem(targetAnimal, isCorrect);
+            
+            currentRound++;
+            document.getElementById('current-round').textContent = currentRound;
+
+            setTimeout(() => {
+                button.classList.remove(isCorrect ? 'correct' : 'wrong');
+                
+                if (currentRound <= TOTAL_ROUNDS) {
+                    setNewTarget();
+                } else {
+                    showResult();
+                }
+            }, isCorrect ? 1000 : 500);
+        }
+
+
+        document.getElementById('start-button').addEventListener('click', () => {
+            showScreen('game-screen');
+            initGame();
+        });
+
+        document.getElementById('restart-button').addEventListener('click', () => {
+            showScreen('game-screen');
+            initGame();
+        });
+
+        document.getElementById('play-button').addEventListener('click', () => {
+            playAnimalSound(targetAnimal);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>找数字游戏</title>
+    <style>
+        body {
+            font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f9ff;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        #question {
+            font-size: 2.5rem;
+            margin: 20px;
+            color: #2563eb;
+            text-align: center;
+        }
+
+        #game-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 20px;
+            max-width: 500px;
+        }
+
+        .number-btn {
+            width: 100px;
+            height: 100px;
+            font-size: 2.5rem;
+            border: none;
+            border-radius: 15px;
+            background-color: #60a5fa;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .number-btn:hover {
+            transform: scale(1.05);
+            background-color: #3b82f6;
+        }
+
+        .number-btn:active {
+            transform: scale(0.95);
+        }
+
+        .correct {
+            background-color: #34d399 !important;
+            animation: bounce 0.5s;
+        }
+
+        .wrong {
+            background-color: #f87171 !important;
+            animation: shake 0.5s;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        #score {
+            font-size: 1.5rem;
+            color: #4b5563;
+            margin: 20px;
+        }
+
+        #celebration {
+            position: fixed;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            display: none;
+        }
+
+        .play-btn {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .play-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        .play-btn:active {
+            transform: scale(0.98);
+        }
+
+        .play-icon {
+            font-size: 1.4rem;
+        }
+
+        .game-layout {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .game-history {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            min-width: 200px;
+        }
+
+        .history-title {
+            font-size: 1.2rem;
+            color: #2563eb;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .history-item.success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .history-item.fail {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .round-number {
+            font-weight: bold;
+        }
+
+        .progress-info {
+            font-size: 1.2rem;
+            color: #4b5563;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .start-screen, .result-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            z-index: 100;
+        }
+
+        .big-button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 32px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 20px;
+        }
+
+        .big-button:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        .big-button:active {
+            transform: translateY(0);
+        }
+
+        .result-title {
+            font-size: 2.5rem;
+            color: #2563eb;
+            margin-bottom: 20px;
+        }
+
+        .result-stats {
+            font-size: 1.5rem;
+            color: #4b5563;
+            margin: 10px 0;
+        }
+
+        .game-title {
+            font-size: 3rem;
+            color: #2563eb;
+            margin-bottom: 30px;
+        }
+
+        .game-description {
+            font-size: 1.2rem;
+            color: #4b5563;
+            margin-bottom: 30px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .result-history {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .result-history-title {
+            font-size: 1.5rem;
+            color: #2563eb;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .result-history-container {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .result-history-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .result-history-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .result-history-container::-webkit-scrollbar-thumb {
+            background: #2563eb;
+            border-radius: 4px;
+        }
+
+        /* 修改结果界面布局样式 */
+        .result-screen {
+            padding: 40px;
+        }
+
+        .result-container {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .result-history {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 0;  /* 移除原有的margin */
+            max-width: none;  /* 移除原有的max-width */
+        }
+
+        .result-right {
+            flex: 0 0 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-title {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .result-stats {
+            font-size: 1.5rem;
+            color: #4b5563;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .result-history-container {
+            max-height: 500px;  /* 增加高度 */
+        }
+
+        /* 添加一些强调样式 */
+        .stats-value {
+            color: #2563eb;
+            font-weight: bold;
+            font-size: 2rem;
+        }
+
+        /* 修改主容器宽度 */
+        .container {
+            width: 60%;
+            margin: 0 auto;
+            max-width: 1200px;
+        }
+
+        /* 修改游戏布局宽度 */
+        .game-layout {
+            width: 100%;
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        /* 修改结果容器宽度 */
+        .result-container {
+            width: 60%;
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            margin: 0 auto;
+        }
+
+        /* 调整游戏容器大小以适应新宽度 */
+        #game-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .number-btn {
+            width: auto;  /* 移除固定宽度 */
+            aspect-ratio: 1;  /* 保持正方形 */
+            height: auto;  /* 移除固定高度 */
+            min-height: 80px;  /* 设置最小高度 */
+        }
+
+        /* 调整开始界面内容宽度 */
+        .game-description {
+            width: 100%;
+            max-width: none;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen" class="screen start-screen active">
+        <div class="container">
+            <h1 class="game-title">找数字游戏</h1>
+            <p class="game-description">
+                听数字，找数字！每局游戏10轮，答对得1分。
+                看看你能得多少分！
+            </p>
+            <button id="start-button" class="big-button">开始游戏</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen result-screen">
+        <h2 class="result-title">游戏结束！</h2>
+        <div class="result-container">
+            <div class="result-history">
+                <div class="result-history-title">本局游戏记录</div>
+                <div id="result-history-container" class="result-history-container">
+                    <!-- 游戏记录将在这里显示 -->
+                </div>
+            </div>
+            <div class="result-right">
+                <div class="result-stats">
+                    最终得分
+                    <div class="stats-value"><span id="final-score">0</span></div>
+                </div>
+                <div class="result-stats">
+                    正确率
+                    <div class="stats-value"><span id="accuracy">0</span>%</div>
+                </div>
+                <button id="restart-button" class="big-button">再玩一次</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="container">
+            <div id="score">得分：<span id="score-value">0</span></div>
+            <div id="question">
+                找一找：
+                <button id="play-button" class="play-btn">
+                    <span class="play-icon">🔊</span> 播放数字
+                </button>
+            </div>
+            <div class="game-layout">
+                <div id="game-container"></div>
+                <div class="game-history">
+                    <div class="history-title">游戏记录</div>
+                    <div class="progress-info">第 <span id="current-round">1</span>/10 轮</div>
+                    <div id="history-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="celebration"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+    <script>
+        let score = 0;
+        let targetNumber;
+        let currentRound = 1;
+        const TOTAL_ROUNDS = 10;
+        const synth = window.speechSynthesis;
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function initGame() {
+            score = 0;
+            currentRound = 1;
+            document.getElementById('score-value').textContent = score;
+            document.getElementById('current-round').textContent = currentRound;
+            document.getElementById('history-container').innerHTML = '';
+            document.getElementById('result-history-container').innerHTML = '';
+            setNewTarget();
+        }
+
+        function showResult() {
+            const accuracy = Math.round((score / TOTAL_ROUNDS) * 100);
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('accuracy').textContent = accuracy;
+            showScreen('result-screen');
+        }
+
+        document.getElementById('start-button').addEventListener('click', () => {
+            showScreen('game-screen');
+            initGame();
+        });
+
+        document.getElementById('restart-button').addEventListener('click', () => {
+            showScreen('game-screen');
+            initGame();
+        });
+
+        document.getElementById('play-button').addEventListener('click', () => {
+            speakNumber(targetNumber);
+        });
+
+        function generateNumbers() {
+            const numbers = Array.from({length: 9}, (_, i) => i + 1);
+            return numbers.sort(() => Math.random() - 0.5);
+        }
+
+        function speakNumber(number) {
+            synth.cancel();
+            const utterance = new SpeechSynthesisUtterance(`${number}`);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            synth.speak(utterance);
+        }
+
+        function setNewTarget() {
+            const numbers = generateNumbers();
+            targetNumber = numbers[Math.floor(Math.random() * numbers.length)];
+            
+            speakNumber(targetNumber);
+            
+            const gameContainer = document.getElementById('game-container');
+            gameContainer.innerHTML = '';
+            
+            numbers.forEach(num => {
+                const button = document.createElement('button');
+                button.className = 'number-btn';
+                button.textContent = num;
+                button.onclick = () => checkNumber(num, button);
+                gameContainer.appendChild(button);
+            });
+        }
+
+        function addHistoryItem(number, isSuccess) {
+            const historyContainer = document.getElementById('history-container');
+            const historyItem = document.createElement('div');
+            historyItem.className = `history-item ${isSuccess ? 'success' : 'fail'}`;
+            historyItem.innerHTML = `
+                <span class="round-number">第${currentRound}轮:</span>
+                <span>${isSuccess ? '✓' : '✗'}</span>
+                <span>数字${number}</span>
+            `;
+            historyContainer.appendChild(historyItem);
+
+            const resultHistoryItem = historyItem.cloneNode(true);
+            document.getElementById('result-history-container').appendChild(resultHistoryItem);
+        }
+
+        function checkNumber(num, button) {
+            const isCorrect = num === targetNumber;
+            
+            if (isCorrect) {
+                button.classList.add('correct');
+                score += 1;
+                document.getElementById('score-value').textContent = score;
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            } else {
+                button.classList.add('wrong');
+            }
+
+            addHistoryItem(targetNumber, isCorrect);
+            
+            currentRound++;
+            document.getElementById('current-round').textContent = currentRound;
+
+            setTimeout(() => {
+                button.classList.remove(isCorrect ? 'correct' : 'wrong');
+                
+                if (currentRound <= TOTAL_ROUNDS) {
+                    setNewTarget();
+                } else {
+                    showResult();
+                }
+            }, isCorrect ? 1000 : 500);
+        }
+    </script>
+</body>
+</html>
